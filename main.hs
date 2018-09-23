@@ -39,4 +39,11 @@ main = interact solver where
             printField (value, pValues, x, y) = [intToDigit value]
         solveSudoku :: Sudoku -> Sudoku
         solveSudoku sudoku = sudoku
+            where 
+            solve :: Field -> Field
+            solve = undefined
+                where
+                possibleValues :: [Int]
+                possibleValues [] = undefined
+                possibleValues values@(x:xs) = undefined
         
