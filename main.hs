@@ -2,7 +2,8 @@ module Main where
 
 import Data.Char
 import Data.List
-import Data.Maybe
+import GHC.Exts
+
 
 -- | Model
 -- Field: value, possibleValues, rowIndex, columnIndex
@@ -38,12 +39,13 @@ main = interact solver where
             printField :: Field -> String
             printField (value, pValues, x, y) = [intToDigit value]
         solveSudoku :: Sudoku -> Sudoku
-        solveSudoku sudoku = sudoku
+        solveSudoku sudoku = unconcat (solve (concat sudoku))
             where 
-            solve :: Field -> Field
-            solve = undefined
+            solve :: [Field] -> [Field]
+            solve sudoku = sudoku
+            unconcat :: [Field] -> [[Field]]
+            unconcat = groupWith (\(v, pV, x, y) -> y) 
                 where
-                possibleValues :: [Int]
-                possibleValues [] = undefined
-                possibleValues values@(x:xs) = undefined
+                possibleValues :: Field
+                possibleValues = undefined
         
