@@ -13,6 +13,21 @@ type Row    = [Field]
 type Sudoku = [Row]
 
 {-
+    Test Sudoku 
+-}
+
+testSudoku :: [Field]
+testSudoku = [(0,[1..9],0,0),(4,[1..9],1,0),(0,[1..9],2,0),(0,[1..9],3,0),(0,[1..9],4,0),(0,[1..9],5,0),(1,[1..9],6,0),(7,[1..9],7,0),(9,[1..9],8,0),
+              (0,[1..9],0,1),(0,[1..9],1,1),(2,[1..9],2,1),(0,[1..9],3,1),(0,[1..9],4,1),(8,[1..9],5,1),(0,[1..9],6,1),(5,[1..9],7,1),(4,[1..9],8,1),
+              (0,[1..9],0,2),(0,[1..9],1,2),(6,[1..9],2,2),(0,[1..9],3,2),(0,[1..9],4,2),(5,[1..9],5,2),(0,[1..9],6,2),(0,[1..9],7,2),(8,[1..9],8,2),
+              (0,[1..9],0,3),(8,[1..9],1,3),(0,[1..9],2,3),(0,[1..9],3,3),(7,[1..9],4,3),(0,[1..9],5,3),(9,[1..9],6,3),(1,[1..9],7,3),(0,[1..9],8,3),
+              (0,[1..9],0,4),(5,[1..9],1,4),(0,[1..9],2,4),(0,[1..9],3,4),(9,[1..9],4,4),(0,[1..9],5,4),(0,[1..9],6,4),(3,[1..9],7,4),(0,[1..9],8,4),
+              (0,[1..9],0,5),(1,[1..9],1,5),(9,[1..9],2,5),(0,[1..9],3,5),(6,[1..9],4,5),(0,[1..9],5,5),(0,[1..9],6,5),(4,[1..9],7,5),(0,[1..9],8,5),
+              (3,[1..9],0,6),(0,[1..9],1,6),(0,[1..9],2,6),(4,[1..9],3,6),(0,[1..9],4,6),(0,[1..9],5,6),(7,[1..9],6,6),(0,[1..9],7,6),(0,[1..9],8,6),
+              (5,[1..9],0,7),(7,[1..9],1,7),(0,[1..9],2,7),(1,[1..9],3,7),(0,[1..9],4,7),(0,[1..9],5,7),(2,[1..9],6,7),(0,[1..9],7,7),(0,[1..9],8,7),
+              (9,[1..9],0,8),(2,[1..9],1,8),(8,[1..9],2,8),(0,[1..9],3,8),(0,[1..9],4,8),(0,[1..9],5,8),(0,[1..9],6,8),(6,[1..9],7,8),(0,[1..9],8,8)]
+
+{-
     Parsing and printing sudoku
 -}
 
@@ -36,14 +51,26 @@ parseSudoku input = zipWith4 f (parseInput input) (possibleValuesArray (parseInp
     f :: [Int] -> [[Int]] -> [Int] -> [Int] -> [(Int, [Int], Int, Int)]
     f = zipWith4 (\x y v z -> (x,y,v,z))
 
+printLine :: String
+printLine = "\n---------------------\n"
+
+printRow :: Row -> String
+printRow [(v, _, _, _)] = show v
+printRow ((v, _, x, y):xs)
+    | (x+1) `mod` 3 == 0 = show v ++ " | " ++ printRow xs
+    | otherwise          = show v ++ " "   ++ printRow xs
+
 printSudoku :: Sudoku -> String
-printSudoku table = unlines (map (intercalate "|" . map printField) table)
-    where
-    printField :: Field -> String
-    printField (value, pValues, x, y) = [intToDigit value]
+printSudoku [row] = printRow row
+printSudoku (row@(field@(_, _, _, y):fields):rows)
+    | (y+1) `mod` 3 == 0 = printRow row ++ printLine ++ printSudoku rows
+    | otherwise = printRow row ++ "\n" ++ printSudoku rows
 
 showField :: Field -> String
 showField (v, pVs, x, y) = "(v:" ++ show v ++ " pVs:" ++ show pVs ++ " x:" ++ show x ++ " y:" ++ show y ++ ")"
+
+unconcatFields :: [Field] -> Sudoku
+unconcatFields = groupWith (\(v, pVs, x, y) -> y)
 
 {-
     Solving Sudoku
@@ -104,10 +131,8 @@ solveEmptyFields sudoku done notdone@(x:xs) = case loopThroughpValues x (replace
     trace2 field done (notdone:(notdone2:_)) = trace ("V2:" ++ showField field ++ " NotDone2:" ++ showField notdone ++ " NotDone2:" ++ showField notdone2)
 
 solveSudoku :: Sudoku -> Sudoku
-solveSudoku sudoku = unconcat (solveEmptyFields fields [] (emptyFields fields))
+solveSudoku sudoku = unconcatFields (solveEmptyFields fields [] (emptyFields fields))
     where
-    unconcat :: [Field] -> [[Field]]
-    unconcat = groupWith (\(v, pVs, x, y) -> y)
     fields :: [Field]
     fields = concat sudoku
 
@@ -126,28 +151,18 @@ main = interact solver where
 
 tests = TestList [
     "test resetField"                           ~: (0, [1..9], 0, 0)                    ~=? resetField (0, [], 0, 0),
-    "test checkFieldH"                          ~: False                                ~=? checkField (1, [], 0, 0) sudoku,
-    "test checkFieldV"                          ~: False                                ~=? checkField (3, [], 0, 0) sudoku,
-    "test checkFieldP"                          ~: False                                ~=? checkField (2, [], 0, 0) sudoku,
-    "test checkFieldP"                          ~: True                                 ~=? checkField (8, [], 0, 0) sudoku,
+    "test checkFieldH"                          ~: False                                ~=? checkField (1, [], 0, 0) testSudoku,
+    "test checkFieldV"                          ~: False                                ~=? checkField (3, [], 0, 0) testSudoku,
+    "test checkFieldP"                          ~: False                                ~=? checkField (2, [], 0, 0) testSudoku,
+    "test checkFieldP"                          ~: True                                 ~=? checkField (8, [], 0, 0) testSudoku,
     "test replaceField (should replace)"        ~: [(2, [], 0, 0), (1, [1..9], 0, 1)]   ~=? replaceFields [(2, [], 0, 0)] [(1, [1..9], 0, 0), (1, [1..9], 0, 1)],
     "test replaceField (should not replace)"    ~: [(1, [1..9], 0, 0)]                  ~=? replaceFields [(2, [], 0, 1)] [(1, [1..9], 0, 0)],
     "test replaceField (should not replace)"    ~: [(1, [1..9], 0, 0)]                  ~=? replaceFields [(2, [], 1, 0)] [(1, [1..9], 0, 0)],
     "test emptyField (should return something)" ~: [(0, [], 0, 0)]                      ~=? emptyFields [(0, [], 0, 0), (1, [], 0, 1)],
     "test emptyField (should return something)" ~: []                                   ~=? emptyFields [(5, [], 0, 0), (1, [], 0, 1)],
-    "test loopThroughpValues"                   ~: (8, [9], 0, 0)                       ~=? loopThroughpValues (0, [1..9], 0, 0) sudoku,
-    "test loopThroughpValues"                   ~: (3, [4..9], 2, 0)                    ~=? loopThroughpValues (0, [1..9], 2, 0) (replaceFields [(8, [9], 0, 0)] sudoku)
+    "test loopThroughpValues"                   ~: (8, [9], 0, 0)                       ~=? loopThroughpValues (0, [1..9], 0, 0) testSudoku,
+    "test loopThroughpValues"                   ~: (3, [4..9], 2, 0)                    ~=? loopThroughpValues (0, [1..9], 2, 0) (replaceFields [(8, [9], 0, 0)] testSudoku)
     ]
-    where
-    sudoku = [(0,[1..9],0,0),(4,[1..9],1,0),(0,[1..9],2,0),(0,[1..9],3,0),(0,[1..9],4,0),(0,[1..9],5,0),(1,[1..9],6,0),(7,[1..9],7,0),(9,[1..9],8,0),
-              (0,[1..9],0,1),(0,[1..9],1,1),(2,[1..9],2,1),(0,[1..9],3,1),(0,[1..9],4,1),(8,[1..9],5,1),(0,[1..9],6,1),(5,[1..9],7,1),(4,[1..9],8,1),
-              (0,[1..9],0,2),(0,[1..9],1,2),(6,[1..9],2,2),(0,[1..9],3,2),(0,[1..9],4,2),(5,[1..9],5,2),(0,[1..9],6,2),(0,[1..9],7,2),(8,[1..9],8,2),
-              (0,[1..9],0,3),(8,[1..9],1,3),(0,[1..9],2,3),(0,[1..9],3,3),(7,[1..9],4,3),(0,[1..9],5,3),(9,[1..9],6,3),(1,[1..9],7,3),(0,[1..9],8,3),
-              (0,[1..9],0,4),(5,[1..9],1,4),(0,[1..9],2,4),(0,[1..9],3,4),(9,[1..9],4,4),(0,[1..9],5,4),(0,[1..9],6,4),(3,[1..9],7,4),(0,[1..9],8,4),
-              (0,[1..9],0,5),(1,[1..9],1,5),(9,[1..9],2,5),(0,[1..9],3,5),(6,[1..9],4,5),(0,[1..9],5,5),(0,[1..9],6,5),(4,[1..9],7,5),(0,[1..9],8,5),
-              (3,[1..9],0,6),(0,[1..9],1,6),(0,[1..9],2,6),(4,[1..9],3,6),(0,[1..9],4,6),(0,[1..9],5,6),(7,[1..9],6,6),(0,[1..9],7,6),(0,[1..9],8,6),
-              (5,[1..9],0,7),(7,[1..9],1,7),(0,[1..9],2,7),(1,[1..9],3,7),(0,[1..9],4,7),(0,[1..9],5,7),(2,[1..9],6,7),(0,[1..9],7,7),(0,[1..9],8,7),
-              (9,[1..9],0,8),(2,[1..9],1,8),(8,[1..9],2,8),(0,[1..9],3,8),(0,[1..9],4,8),(0,[1..9],5,8),(0,[1..9],6,8),(6,[1..9],7,8),(0,[1..9],8,8)]
 
 
 
