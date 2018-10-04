@@ -116,7 +116,7 @@ checkField field@(v, _, x, y) ((v2, _, x2, y2):xs)
     | otherwise = checkField field xs
 
 loopThroughpValues :: Field -> [Field] -> Field
-loopThroughpValues field@(_, [], _, _) fields = field
+loopThroughpValues field@(_, [], x, y) fields = (0, [], x, y)
 loopThroughpValues (v, pV:pVs, x, y) fields
     | checkField (pV, pVs, x, y) fields = (pV, pVs, x, y)
     | otherwise = loopThroughpValues (v, pVs, x, y) fields
@@ -124,8 +124,8 @@ loopThroughpValues (v, pV:pVs, x, y) fields
 solveEmptyFields :: [Field] -> [Field] -> [Field] -> [Field]
 solveEmptyFields sudoku done [] = replaceFields done sudoku
 solveEmptyFields sudoku done notdone@(x:xs) = case loopThroughpValues x (replaceFields done sudoku) of
-    field@(_, [], x, y)  -> trace1 field done notdone $ solveEmptyFields sudoku (init done) (last done : resetField field : xs)
-    field@(v, pVs, x, y) -> trace2 field done notdone $ solveEmptyFields sudoku (done ++ [field]) xs
+    field@(0, _, x, y)  -> solveEmptyFields sudoku (init done) (last done : resetField field : xs)
+    field@(v, pVs, x, y) -> solveEmptyFields sudoku (done ++ [field]) xs
     where
     trace1 field done (notdone:(notdone2:_)) = trace ("V1:" ++ showField field ++ " NotDone1:" ++ showField notdone ++ " NotDone1:" ++ showField notdone2)
     trace2 field done (notdone:(notdone2:_)) = trace ("V2:" ++ showField field ++ " NotDone2:" ++ showField notdone ++ " NotDone2:" ++ showField notdone2)
@@ -142,7 +142,7 @@ solveSudoku sudoku = unconcatFields (solveEmptyFields fields [] (emptyFields fie
 
 main = interact solver where
     solver :: String -> String
-    solver input = printSudoku (solveSudoku (parseSudoku input))
+    solver input = printSudoku (solveSudoku (parseSudoku input)) ++ "\n"
 
 
 {-
