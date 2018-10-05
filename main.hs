@@ -13,21 +13,6 @@ type Row    = [Field]
 type Sudoku = [Row]
 
 {-
-    Test Sudoku 
--}
-
-testSudoku :: [Field]
-testSudoku = [(0,[1..9],0,0),(4,[1..9],1,0),(0,[1..9],2,0),(0,[1..9],3,0),(0,[1..9],4,0),(0,[1..9],5,0),(1,[1..9],6,0),(7,[1..9],7,0),(9,[1..9],8,0),
-              (0,[1..9],0,1),(0,[1..9],1,1),(2,[1..9],2,1),(0,[1..9],3,1),(0,[1..9],4,1),(8,[1..9],5,1),(0,[1..9],6,1),(5,[1..9],7,1),(4,[1..9],8,1),
-              (0,[1..9],0,2),(0,[1..9],1,2),(6,[1..9],2,2),(0,[1..9],3,2),(0,[1..9],4,2),(5,[1..9],5,2),(0,[1..9],6,2),(0,[1..9],7,2),(8,[1..9],8,2),
-              (0,[1..9],0,3),(8,[1..9],1,3),(0,[1..9],2,3),(0,[1..9],3,3),(7,[1..9],4,3),(0,[1..9],5,3),(9,[1..9],6,3),(1,[1..9],7,3),(0,[1..9],8,3),
-              (0,[1..9],0,4),(5,[1..9],1,4),(0,[1..9],2,4),(0,[1..9],3,4),(9,[1..9],4,4),(0,[1..9],5,4),(0,[1..9],6,4),(3,[1..9],7,4),(0,[1..9],8,4),
-              (0,[1..9],0,5),(1,[1..9],1,5),(9,[1..9],2,5),(0,[1..9],3,5),(6,[1..9],4,5),(0,[1..9],5,5),(0,[1..9],6,5),(4,[1..9],7,5),(0,[1..9],8,5),
-              (3,[1..9],0,6),(0,[1..9],1,6),(0,[1..9],2,6),(4,[1..9],3,6),(0,[1..9],4,6),(0,[1..9],5,6),(7,[1..9],6,6),(0,[1..9],7,6),(0,[1..9],8,6),
-              (5,[1..9],0,7),(7,[1..9],1,7),(0,[1..9],2,7),(1,[1..9],3,7),(0,[1..9],4,7),(0,[1..9],5,7),(2,[1..9],6,7),(0,[1..9],7,7),(0,[1..9],8,7),
-              (9,[1..9],0,8),(2,[1..9],1,8),(8,[1..9],2,8),(0,[1..9],3,8),(0,[1..9],4,8),(0,[1..9],5,8),(0,[1..9],6,8),(6,[1..9],7,8),(0,[1..9],8,8)]
-
-{-
     Parsing and printing sudoku
 -}
 
@@ -76,31 +61,12 @@ unconcatFields = groupWith (\(v, pVs, x, y) -> y)
     Solving Sudoku
 -}
 
-resetField :: Field -> Field
-resetField (v, [], x, y) = (v, [1..9], x, y)
-
-getColumnIndex :: Field -> Int
-getColumnIndex (_,_,x,_) = x
-
-getRowIndex :: Field -> Int
-getRowIndex (_,_,_,y) = y
-
-getField :: Int -> Int -> [Field] -> Field
-getField x y [] = error "Field is not found"
-getField x y (field@(_,_,fx, fy):fs)
-    | x == fx && y == fy = field
-    | otherwise = getField x y fs
-
-setField :: Field -> [Field] -> [Field]
-setField _ [] = []
-setField f@(_, _, x, y) (f2@(_, _, fx, fy):fs)
-    | x == fx && y == fy = f : setField f fs
-    | otherwise = f2 : setField f fs
+-- resetField :: Field -> Field
+-- resetField (v, [], x, y) = (v, [1..9], x, y)
 
 replaceFields :: [Field] -> [Field] -> [Field]
-replaceFields [] [] = []
-replaceFields _ [] = []
-replaceFields [] xs  = [] ++ xs
+replaceFields [] xs = xs
+replaceFields _ []  = []
 replaceFields replace@(rf@(_,_,rx,ry):rfs) fields@(f@(_,_,fx,fy):fs)
     | rx == fx && ry == fy = rf : replaceFields rfs fs
     | otherwise = f : replaceFields replace fs
@@ -116,7 +82,7 @@ checkField field@(v, _, x, y) ((v2, _, x2, y2):xs)
     | otherwise = checkField field xs
 
 loopThroughpValues :: Field -> [Field] -> Field
-loopThroughpValues field@(_, [], x, y) fields = (0, [], x, y)
+loopThroughpValues field@(_, _, x, y) fields = (0, [1..9], x, y)
 loopThroughpValues (v, pV:pVs, x, y) fields
     | checkField (pV, pVs, x, y) fields = (pV, pVs, x, y)
     | otherwise = loopThroughpValues (v, pVs, x, y) fields
@@ -124,8 +90,8 @@ loopThroughpValues (v, pV:pVs, x, y) fields
 solveEmptyFields :: [Field] -> [Field] -> [Field] -> [Field]
 solveEmptyFields sudoku done [] = replaceFields done sudoku
 solveEmptyFields sudoku done notdone@(x:xs) = case loopThroughpValues x (replaceFields done sudoku) of
-    field@(0, _, x, y)  -> solveEmptyFields sudoku (init done) (last done : resetField field : xs)
-    field@(v, pVs, x, y) -> solveEmptyFields sudoku (done ++ [field]) xs
+    field@(0, _, _, _)   -> solveEmptyFields sudoku (init done) (last done : field : xs)
+    field                -> solveEmptyFields sudoku (done ++ [field]) xs
     where
     trace1 field done (notdone:(notdone2:_)) = trace ("V1:" ++ showField field ++ " NotDone1:" ++ showField notdone ++ " NotDone1:" ++ showField notdone2)
     trace2 field done (notdone:(notdone2:_)) = trace ("V2:" ++ showField field ++ " NotDone2:" ++ showField notdone ++ " NotDone2:" ++ showField notdone2)
@@ -148,6 +114,17 @@ main = interact solver where
 {-
     Tests
 -}
+
+testSudoku :: [Field]
+testSudoku = [(0,[1..9],0,0),(4,[1..9],1,0),(0,[1..9],2,0),(0,[1..9],3,0),(0,[1..9],4,0),(0,[1..9],5,0),(1,[1..9],6,0),(7,[1..9],7,0),(9,[1..9],8,0),
+              (0,[1..9],0,1),(0,[1..9],1,1),(2,[1..9],2,1),(0,[1..9],3,1),(0,[1..9],4,1),(8,[1..9],5,1),(0,[1..9],6,1),(5,[1..9],7,1),(4,[1..9],8,1),
+              (0,[1..9],0,2),(0,[1..9],1,2),(6,[1..9],2,2),(0,[1..9],3,2),(0,[1..9],4,2),(5,[1..9],5,2),(0,[1..9],6,2),(0,[1..9],7,2),(8,[1..9],8,2),
+              (0,[1..9],0,3),(8,[1..9],1,3),(0,[1..9],2,3),(0,[1..9],3,3),(7,[1..9],4,3),(0,[1..9],5,3),(9,[1..9],6,3),(1,[1..9],7,3),(0,[1..9],8,3),
+              (0,[1..9],0,4),(5,[1..9],1,4),(0,[1..9],2,4),(0,[1..9],3,4),(9,[1..9],4,4),(0,[1..9],5,4),(0,[1..9],6,4),(3,[1..9],7,4),(0,[1..9],8,4),
+              (0,[1..9],0,5),(1,[1..9],1,5),(9,[1..9],2,5),(0,[1..9],3,5),(6,[1..9],4,5),(0,[1..9],5,5),(0,[1..9],6,5),(4,[1..9],7,5),(0,[1..9],8,5),
+              (3,[1..9],0,6),(0,[1..9],1,6),(0,[1..9],2,6),(4,[1..9],3,6),(0,[1..9],4,6),(0,[1..9],5,6),(7,[1..9],6,6),(0,[1..9],7,6),(0,[1..9],8,6),
+              (5,[1..9],0,7),(7,[1..9],1,7),(0,[1..9],2,7),(1,[1..9],3,7),(0,[1..9],4,7),(0,[1..9],5,7),(2,[1..9],6,7),(0,[1..9],7,7),(0,[1..9],8,7),
+              (9,[1..9],0,8),(2,[1..9],1,8),(8,[1..9],2,8),(0,[1..9],3,8),(0,[1..9],4,8),(0,[1..9],5,8),(0,[1..9],6,8),(6,[1..9],7,8),(0,[1..9],8,8)]
 
 tests = TestList [
     "test resetField"                           ~: (0, [1..9], 0, 0)                    ~=? resetField (0, [], 0, 0),
