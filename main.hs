@@ -17,27 +17,18 @@ type Sudoku = [Row]
 -}
 
 parseSudoku :: String -> [[Field]]
-parseSudoku input = zipWith4 f (parseInput input) (possibleValuesArray (parseInput input)) (map index (parseInput input)) (transpose (map index (parseInput input)))
+parseSudoku input = zipWith4 zip4 (parseInput input) possibleValuesArray columns rows
     where
-    convert :: String -> Int
-    convert (char:_) = digitToInt char
+    convertToInt :: String -> Int
+    convertToInt (char:_) = digitToInt char
     parseInput :: String -> [[Int]]
-    parseInput input = map (map convert . words) (lines input)
-    possibleValues :: Int -> [Int]
-    possibleValues _ = [1..9]
-    possibleValuesArray :: [[Int]] -> [[[Int]]]
-    possibleValuesArray = map (map possibleValues)
-    index :: [Int] -> [Int]
-    index [] = []
-    index xs = index' xs []
-        where
-        index' [] acc       = acc
-        index' y@(_:xs) acc = index' xs ((length y - 1) : acc)
-    f :: [Int] -> [[Int]] -> [Int] -> [Int] -> [(Int, [Int], Int, Int)]
-    f = zipWith4 (\x y v z -> (x,y,v,z))
-
-printLine :: String
-printLine = "\n---------------------\n"
+    parseInput input = map (map convertToInt . words) (lines input)
+    possibleValuesArray :: [[[Int]]]
+    possibleValuesArray = (replicate 9 . replicate 9) [1..9]
+    columns :: [[Int]]
+    columns = replicate 9 [0..8]
+    rows :: [[Int]]
+    rows = transpose columns
 
 printRow :: Row -> String
 printRow [(v, _, _, _)] = show v
@@ -50,6 +41,8 @@ printSudoku [row] = printRow row
 printSudoku (row@(field@(_, _, _, y):fields):rows)
     | (y+1) `mod` 3 == 0 = printRow row ++ printLine ++ printSudoku rows
     | otherwise          = printRow row ++ "\n" ++ printSudoku rows
+    where
+    printLine = "\n---------------------\n"
 
 unconcatFields :: [Field] -> Sudoku
 unconcatFields = groupWith (\(v, pVs, x, y) -> y)
@@ -91,7 +84,7 @@ solveEmptyFields sudoku done notdone@(x:xs) = case loopThroughpValues x (replace
     f              -> solveEmptyFields sudoku (done ++ [f]) xs
 
 solveSudoku :: Sudoku -> Sudoku
-solveSudoku sudoku = unconcatFields (solveEmptyFields fields [] (emptyFields fields))
+solveSudoku sudoku = unconcatFields $ solveEmptyFields fields [] (emptyFields fields)
     where
     fields :: [Field]
     fields = concat sudoku
